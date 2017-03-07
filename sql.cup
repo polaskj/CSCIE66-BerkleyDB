@@ -1,0 +1,311 @@
+import java.util.*;
+import java_cup.runtime.*;
+
+parser code {:
+       public void syntax_error(Symbol cur_token) {
+	   System.err.println("Syntax error beginning at character " +
+             cur_token.left + ": \"" + cur_token.value + "\"");
+       }
+       public void unrecovered_syntax_error(Symbol cur_token) {
+	   throw new InvalidSyntaxException();
+       }
+:}
+
+// definition of tokens, if applicable with token type 
+terminal ALL, AND, AS, BEGIN;
+terminal CHAR, CLIKE, COMMIT, CREATE;
+terminal DELETE, DISTINCT, DROP, FROM;
+terminal INSERT, INTEGER, INTO, IS;
+terminal KEY, LIKE, LIMIT, NOT, NULL;
+terminal OR, PRIMARY, REAL, ROLLBACK;
+terminal SELECT, SET, TABLE, UPDATE;
+terminal VALUES, VARCHAR, WHERE, WORK;
+
+terminal LPAREN, RPAREN, COMMA, DOT, STAR, SEMICOLON;
+terminal EQ, GT, LT, LTEQ, GTEQ, NOTEQ;
+// NOT is already defined above
+
+terminal String ID, STRING;
+terminal Integer INT_VAL;
+terminal Double REAL_VAL;
+
+non terminal SQLStatement sql_stmt; 
+non terminal SelectStatement select_stmt;
+non terminal InsertStatement insert_stmt;
+non terminal UpdateStatement update_stmt;
+non terminal DeleteStatement delete_stmt;
+non terminal CreateStatement create_stmt;
+non terminal DropStatement drop_stmt;
+non terminal BeginStatement begin_stmt;
+non terminal CommitStatement commit_stmt;
+non terminal RollbackStatement rollback_stmt;
+
+non terminal Table table, from_item;
+non terminal Column column, col_def;
+non terminal ColumnOptions col_def_opts;
+non terminal ConditionalExpression where_clause, conditional_expression,
+    conditional_term, conditional_factor, conditional_primary;
+non terminal Comparison comparison;
+non terminal CompareTerm cterm;
+non terminal Limit limit;
+
+non terminal ArrayList<Table> from_list;
+non terminal ArrayList<Column> col_def_list, insert_col_clause, 
+    insert_col_list, update_list;
+non terminal ArrayList<Object> select_list, insert_val_list;
+
+non terminal Boolean distinct_specified;
+non terminal Object column_val, select_item;
+non terminal String range_variable;
+non terminal optional_work;
+
+
+// Rules of the grammar
+
+sql_stmt ::= 
+      select_stmt:s   SEMICOLON   {: RESULT = s; :}
+    | insert_stmt:i   SEMICOLON   {: RESULT = i; :}
+    | update_stmt:u   SEMICOLON   {: RESULT = u; :}
+    | delete_stmt:d   SEMICOLON   {: RESULT = d; :}
+    | create_stmt:c   SEMICOLON   {: RESULT = c; :}
+    | drop_stmt:d     SEMICOLON   {: RESULT = d; :}
+    | begin_stmt:b    SEMICOLON   {: RESULT = b; :}
+    | commit_stmt:c   SEMICOLON   {: RESULT = c; :}
+    | rollback_stmt:r SEMICOLON   {: RESULT = r; :}
+    ;
+ 
+drop_stmt ::= 
+      DROP TABLE table:t  
+      {: RESULT = new DropStatement(t); :}
+    ;
+
+begin_stmt ::=
+      BEGIN WORK
+      {: RESULT = new BeginStatement(); :}
+    ;
+
+commit_stmt ::=
+      COMMIT optional_work
+      {: RESULT = new CommitStatement(); :}
+    ;
+  
+rollback_stmt ::=
+      ROLLBACK optional_work
+      {: RESULT = new RollbackStatement(); :}
+    ;
+
+optional_work ::=
+      /* empty */
+    | WORK
+    ;
+
+create_stmt ::=
+      CREATE TABLE table:t LPAREN col_def_list:cdl RPAREN
+      {: RESULT = new CreateStatement(t, cdl); :}
+    ;
+
+col_def_list ::=
+      col_def:c
+      {: RESULT = new ArrayList<Column>(); RESULT.add(c); :}
+    | col_def_list:cdl COMMA col_def:c
+      {: RESULT = cdl; RESULT.add(c); :}
+    ;
+
+col_def ::=
+      column:c INTEGER col_def_opts:o
+      {: RESULT = c; RESULT.setType(Column.INTEGER); RESULT.applyOpts(o); :}
+    | column:c CHAR LPAREN INT_VAL:i RPAREN col_def_opts:o
+      {: RESULT = c; RESULT.setType(Column.CHAR); RESULT.setLength(i);
+         RESULT.applyOpts(o); :}
+    | column:c VARCHAR LPAREN INT_VAL:i RPAREN col_def_opts:o
+      {: RESULT = c; RESULT.setType(Column.VARCHAR); RESULT.setLength(i);
+         RESULT.applyOpts(o); :}
+    | column:c REAL col_def_opts:o
+      {: RESULT = c; RESULT.setType(Column.REAL); RESULT.applyOpts(o); :}
+    ;
+
+col_def_opts ::=
+      /* empty */           {: RESULT = null; :}
+    | NOT NULL              {: RESULT = new ColumnOptions(true, false); :}
+    | PRIMARY KEY           {: RESULT = new ColumnOptions(false, true); :}
+    | NOT NULL PRIMARY KEY  {: RESULT = new ColumnOptions(true, true); :}
+    | PRIMARY KEY NOT NULL  {: RESULT = new ColumnOptions(true, true); :}
+    ;
+
+select_stmt ::=
+      SELECT distinct_specified:d select_list:sl FROM from_list:fl 
+        where_clause:w limit:l
+      {: RESULT = new SelectStatement(sl, fl, w, l, d); :}
+    ;
+
+distinct_specified ::=
+      /* empty */  {: RESULT = new Boolean(false); :}
+    | ALL          {: RESULT = new Boolean(false); :}
+    | DISTINCT     {: RESULT = new Boolean(true);  :}
+    ; 
+
+select_list ::=
+      select_item:i
+      {: RESULT = new ArrayList<Object>(); RESULT.add(i); :}
+    | select_list:sl COMMA select_item:i
+      {: RESULT = sl; RESULT.add(i); :}
+    ;
+
+select_item ::=
+      column:c      {: RESULT = c; :}
+    | column_val:v  {: RESULT = v; :}
+    | STAR          {: RESULT = SelectStatement.STAR; :}
+    ;
+
+column ::=
+      ID:name              {: RESULT = new Column(name); :}
+    | table:t DOT ID:name  {: RESULT = new Column(name, t); :}
+    ;
+
+column_val ::=
+      INT_VAL:i     {: RESULT = i; :}
+    | REAL_VAL:r    {: RESULT = r; :}
+    | STRING:s      {: RESULT = s; :}
+    | NULL          {: RESULT = null; :}
+    ;
+
+from_list ::=
+      from_item:i
+      {: RESULT = new ArrayList<Table>(); RESULT.add(i); :}
+    | from_list:fl COMMA from_item:i
+      {: RESULT = fl; RESULT.add(i); :}
+    ;
+
+from_item ::=
+      table:t range_variable:r
+      {: RESULT = t; 
+         if (r != null)
+	     RESULT.setRangeVariable(r);
+      :}
+    ;
+
+table ::=
+      ID:name    {: RESULT = new Table(name); :}
+    ;
+
+range_variable ::=
+      /* none */ {: RESULT = null; :}
+    | ID:var     {: RESULT = var; :}
+    | AS ID:var  {: RESULT = var; :}
+    ;      
+
+where_clause ::=
+      /* empty */                     {: RESULT = null; :}   
+    | WHERE conditional_expression:ce {: RESULT = ce; :}
+    ;  
+
+conditional_expression ::=
+      conditional_term:t
+      {: RESULT = t; :}
+    | conditional_expression:left OR conditional_term:right
+      {: RESULT = new OrExpression(left, right); :}
+    ;
+
+conditional_term ::=
+      conditional_factor:f
+      {: RESULT = f; :}
+    | conditional_term:left AND conditional_factor:right
+      {: RESULT = new AndExpression(left, right); :}
+    ;
+
+conditional_factor ::=
+      conditional_primary:p
+      {: RESULT = p; :}
+    | NOT conditional_primary:p
+      {: RESULT = new NotExpression(p); :}
+    ;
+
+conditional_primary ::=
+      comparison:c
+      {: RESULT = c; :}
+    | LPAREN conditional_expression:e RPAREN
+      {: RESULT = e; :}
+    ;
+
+comparison ::=
+      cterm:l EQ cterm:r
+      {: RESULT = new Comparison(Comparison.EQ, l, r); :}
+    | cterm:l NOTEQ cterm:r
+      {: RESULT = new Comparison(Comparison.NOTEQ, l, r); :}
+    | cterm:l LT cterm:r
+      {: RESULT = new Comparison(Comparison.LT, l, r); :}
+    | cterm:l GT cterm:r
+      {: RESULT = new Comparison(Comparison.GT, l, r); :}
+    | cterm:l LTEQ cterm:r
+      {: RESULT = new Comparison(Comparison.LTEQ, l, r); :}
+    | cterm:l GTEQ cterm:r
+      {: RESULT = new Comparison(Comparison.GTEQ, l, r); :}
+    | cterm:l LIKE STRING:s
+      {: RESULT = new Comparison(Comparison.LIKE, l, new CompareTerm(s)); :}
+    | cterm:l CLIKE STRING:s
+      {: RESULT = new Comparison(Comparison.CLIKE, l, new CompareTerm(s)); :}
+    | cterm:c IS NULL
+      {: RESULT = new Comparison(Comparison.IS_NULL, c, null); :}
+    | cterm:c IS NOT NULL
+      {: RESULT = new Comparison(Comparison.IS_NOT_NULL, c, null); :}
+    ;
+
+cterm ::=
+      column:c      {: RESULT = c; :}
+    | INT_VAL:i     {: RESULT = new CompareTerm(i); :}
+    | REAL_VAL:r    {: RESULT = new CompareTerm(r); :}
+    | STRING:s      {: RESULT = new CompareTerm(s); :}
+    ;
+
+limit ::=
+      /* empty */                  
+      {: RESULT = null; :}
+    | LIMIT INT_VAL:max		   
+      {: RESULT = new Limit(null, max); :}
+    | LIMIT INT_VAL:offset COMMA INT_VAL:max
+      {: RESULT = new Limit(offset, max); :}
+    ;
+
+insert_stmt ::=
+      INSERT INTO table:t insert_col_clause:cl VALUES
+        LPAREN insert_val_list:vl RPAREN
+      {: RESULT = new InsertStatement(t, cl, vl); :}
+    ;
+
+insert_col_clause ::=
+      /* empty */
+      {: RESULT = null; :}   
+    | LPAREN insert_col_list:cl RPAREN
+      {: RESULT = cl; :}
+    ;  
+
+insert_col_list ::=
+      column:c
+      {: RESULT = new ArrayList<Column>(); RESULT.add(c); :}
+    | insert_col_list:cl COMMA column:c
+      {: RESULT = cl; RESULT.add(c); :}
+    ;
+
+insert_val_list ::=
+      column_val:v
+      {: RESULT = new ArrayList<Object>(); RESULT.add(v); :}
+    | insert_val_list:vl COMMA column_val:v
+      {: RESULT = vl; RESULT.add(v); :}
+    ;
+
+delete_stmt ::=
+      DELETE FROM table:t where_clause:w
+      {: RESULT = new DeleteStatement(t, w); :}
+    ;
+
+update_stmt ::=
+      UPDATE table:t SET update_list:ul where_clause:w
+      {: RESULT = new UpdateStatement(t, ul, w); :}
+    ;
+
+update_list ::=
+      column:c EQ column_val:v
+      {: RESULT = new ArrayList<Column>(); c.setUpdateVal(v); RESULT.add(c); :}
+    | update_list:ul COMMA column:c EQ column_val:v
+      {: RESULT = ul; c.setUpdateVal(v); RESULT.add(c); :}
+    ;

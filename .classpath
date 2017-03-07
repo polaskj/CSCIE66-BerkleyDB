@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/home/csci/lib"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/home/csci/lib/db.jar"/>
+	<classpathentry kind="lib" path="/home/csci/lib/java-cup-11.jar"/>
+	<classpathentry kind="lib" path="/home/csci/lib/JFlex.jar"/>
+	<classpathentry kind="output" path=""/>
+</classpath>
