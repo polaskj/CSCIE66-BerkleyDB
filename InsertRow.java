@@ -45,12 +45,12 @@ public class InsertRow {
     public void marshall() {
     	TupleOutput keyTupleBuffer = null;
     	TupleOutput dataTupleBuffer = new TupleOutput(); 
-    	int byteLocation = (Integer.SIZE/8) * table.numColumns() + 1; // first available value byte
+    	int byteLocation = (Integer.SIZE/8) * table.numColumns() + 1; // First available value byte
     
     	for (int i = 0; i < table.numColumns(); i++) {
     		Column col = table.getColumn(i);
     		
-    		// Write header metadata
+    		// Write header metadata which contains byte location
     		int columnLength;
     		if (values[i] == null){
     			if (DBMS.DEBUG){
@@ -70,27 +70,27 @@ public class InsertRow {
     					byteLocation + " - Actual value: " + values[i]);
     		}
     	
-    		// Set pk location
-    		if (col.isPrimaryKey()){	
+    		// Set key if current column is PK // Optimize to not save pk in data ???
+    		if ((table.primaryKeyColumn() != null) && col.isPrimaryKey()){	
     			keyTupleBuffer = new TupleOutput(); 
-    			keyTupleBuffer.writeInt(byteLocation); 
+    			// keyTupleBuffer.writeInt(byteLocation); 
+    			writeDataTypeValue(keyTupleBuffer, values[i], col.getType());
     		}
-    		byteLocation += columnLength; // Offset for next byte value
+    		byteLocation += columnLength; // Reset next byte value
     	}
 
-    	 // Write values
+    	 // Write column values
          for (int i = 0; i < table.numColumns(); i++) {
          	Column col = table.getColumn(i);
          	Object value = values[i];
-         	writeTupleOutput(dataTupleBuffer, value, col.getType());
+         	if (value != null){
+         		writeDataTypeValue(dataTupleBuffer, value, col.getType());
+         	}
          } 
 
-         if(keyTupleBuffer == null){
-        	 key = new DatabaseEntry();
-         } else {
-        	 key = new DatabaseEntry(keyTupleBuffer.getBufferBytes(), 0, keyTupleBuffer.getBufferLength());
-         }
-         
+         // Create appropriate DB entries
+         key = (keyTupleBuffer == null) ? 
+        		 new DatabaseEntry() : new DatabaseEntry(keyTupleBuffer.getBufferBytes(), 0, keyTupleBuffer.getBufferLength());
          data = new DatabaseEntry(dataTupleBuffer.getBufferBytes(), 0, dataTupleBuffer.getBufferLength());
     }
     
@@ -113,7 +113,7 @@ public class InsertRow {
         return this.data;
     }
     
-    private void writeTupleOutput(TupleOutput tuple, Object value, int type){
+    private void writeDataTypeValue(TupleOutput tuple, Object value, int type){
     	if (type == Column.INTEGER){
      		tuple.writeInt(((Integer) value).intValue());
      	} else if (type == Column.REAL){

@@ -50,10 +50,14 @@ public class DBMS {
                 /* Get the command string from the user. */
                 System.out.println();
                 System.out.println("Enter command (q to quit): ");
-                //String commandString = console.nextLine();
+//                String commandString = console.nextLine();
                 
+                /*
+                 * CREATE TABLE PKCourse1(id CHAR(7) PRIMARY KEY, fname VARCHAR(10), lname VARCHAR(10) , city VARCHAR(10), area INT);
+                 * DROP TABLE PKCourse1;
+                 */
                 //TODO REMOVE LATER
-                String commandString = "INSERT INTO PKCourse1 VALUES ('a','b','c','d',1);";
+                String commandString = "INSERT INTO PKCourse1 VALUES ('z','b','c','d',99);";
                 
                 if (commandString.equalsIgnoreCase("q"))
                     break;
