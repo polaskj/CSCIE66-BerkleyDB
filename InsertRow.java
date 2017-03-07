@@ -4,8 +4,6 @@
  * DBMS Implementation
  */
 
-import java.io.UnsupportedEncodingException;
-
 import com.sleepycat.db.*;
 import com.sleepycat.bind.*;
 import com.sleepycat.bind.tuple.*;
@@ -45,35 +43,39 @@ public class InsertRow {
      * and marshalls them into a key/data pair.
      */
     public void marshall() {
-    	TupleOutput keyTupleBuffer = new TupleOutput(); 
+    	TupleOutput keyTupleBuffer = null;
     	TupleOutput dataTupleBuffer = new TupleOutput(); 
-    	int byteLocation = (Integer.SIZE/8) * table.numColumns();
+    	int byteLocation = (Integer.SIZE/8) * table.numColumns() + 1; // first available value byte
     
     	for (int i = 0; i < table.numColumns(); i++) {
     		Column col = table.getColumn(i);
     		
     		// Write header metadata
     		int columnLength;
-    		if (col.getType() == Column.VARCHAR){
+    		if (values[i] == null){
+    			if (DBMS.DEBUG){
+	    			System.out.println("Col " + col.getName() + " null. Setting -1");
+	    		}
+    			dataTupleBuffer.writeInt(-1); 
+    			continue;
+    		} else if (col.getType() == Column.VARCHAR){
     			columnLength = ((String)values[i]).length();
     		} else {
     			columnLength = col.getLength(); 
     		}
     		
-    		byteLocation++;
+    		dataTupleBuffer.writeInt(byteLocation); 
     		if (DBMS.DEBUG){
     			System.out.println("Setting " + col.getName() + " header offset at pos " + 
-    				byteLocation + " - Actual value: " + values[i]);
+    					byteLocation + " - Actual value: " + values[i]);
     		}
-    		dataTupleBuffer.writeInt(byteLocation); 
-    		
-    		byteLocation += columnLength;
+    	
     		// Set pk location
     		if (col.isPrimaryKey()){	
+    			keyTupleBuffer = new TupleOutput(); 
     			keyTupleBuffer.writeInt(byteLocation); 
-    			key = new DatabaseEntry(keyTupleBuffer.getBufferBytes(), 0, keyTupleBuffer.getBufferLength());
     		}
-
+    		byteLocation += columnLength; // Offset for next byte value
     	}
 
     	 // Write values
@@ -81,10 +83,14 @@ public class InsertRow {
          	Column col = table.getColumn(i);
          	Object value = values[i];
          	writeTupleOutput(dataTupleBuffer, value, col.getType());
-         	dataTupleBuffer.writeByte(col.getType());
-         	dataTupleBuffer.writeBoolean(col.isNotNull());
          } 
 
+         if(keyTupleBuffer == null){
+        	 key = new DatabaseEntry();
+         } else {
+        	 key = new DatabaseEntry(keyTupleBuffer.getBufferBytes(), 0, keyTupleBuffer.getBufferLength());
+         }
+         
          data = new DatabaseEntry(dataTupleBuffer.getBufferBytes(), 0, dataTupleBuffer.getBufferLength());
     }
     

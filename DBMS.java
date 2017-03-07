@@ -53,7 +53,7 @@ public class DBMS {
                 //String commandString = console.nextLine();
                 
                 //TODO REMOVE LATER
-                String commandString = "INSERT INTO PKCourse1 VALUES ('id001','fname001','lname001','city001',null);";
+                String commandString = "INSERT INTO PKCourse1 VALUES ('a','b','c','d',1);";
                 
                 if (commandString.equalsIgnoreCase("q"))
                     break;
