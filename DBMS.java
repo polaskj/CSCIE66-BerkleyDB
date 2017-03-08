@@ -52,13 +52,21 @@ public class DBMS {
                 System.out.println("Enter command (q to quit): ");
 //                String commandString = console.nextLine();
                 
-                /*
-                 * CREATE TABLE PKCourse1(id CHAR(7) PRIMARY KEY, fname VARCHAR(10), lname VARCHAR(10) , city VARCHAR(10), area INT);
-                 * DROP TABLE PKCourse1;
-                 */
                 //TODO REMOVE LATER
-                String commandString = "SELECT * FROM PKCourse1;";
-                
+//                String commandString = "DROP TABLE PKCourse1;";
+//                String commandString = "CREATE TABLE PKCourse1(id CHAR(10) PRIMARY KEY, fname VARCHAR(10), lname VARCHAR(10) , city VARCHAR(10), area INT);";
+//                String commandString = "INSERT INTO PKCourse1 VALUES ('Z',null,'b','c',123);";
+              String commandString = "SELECT * FROM PKCourse1;";
+
+              
+              /* 
+               * Setting id header offset at pos 21 - Actual value: x         
+				Setting fname header offset at pos 31 - Actual value: a
+				Setting lname header offset at pos 32 - Actual value: b
+				Setting city header offset at pos 33 - Actual value: c
+				Setting area header offset at pos 34 - Actual value: 123
+               */
+              
                 if (commandString.equalsIgnoreCase("q"))
                     break;
                 

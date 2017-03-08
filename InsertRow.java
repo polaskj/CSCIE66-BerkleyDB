@@ -45,7 +45,7 @@ public class InsertRow {
     public void marshall() {
     	TupleOutput keyTupleBuffer = null;
     	TupleOutput dataTupleBuffer = new TupleOutput(); 
-    	int byteLocation = (Integer.SIZE/8) * table.numColumns() + 1; // First available value byte
+    	int byteLocation = (Integer.SIZE/8) * table.numColumns(); // First available value byte
     
     	for (int i = 0; i < table.numColumns(); i++) {
     		Column col = table.getColumn(i);
@@ -58,8 +58,9 @@ public class InsertRow {
 	    		}
     			dataTupleBuffer.writeInt(-1); 
     			continue;
-    		} else if (col.getType() == Column.VARCHAR){
-    			columnLength = ((String)values[i]).length();
+    		} else if (col.getType() == Column.VARCHAR || col.getType() == Column.CHAR){
+    			int l = ((String)values[i]).length(); // Are we supposed to .trim() here???
+    			columnLength = l;
     		} else {
     			columnLength = col.getLength(); 
     		}
@@ -118,9 +119,7 @@ public class InsertRow {
      		tuple.writeInt(((Integer) value).intValue());
      	} else if (type == Column.REAL){
      		tuple.writeDouble(((Double) value).doubleValue());
-     	} else if (type == Column.CHAR){
-     		tuple.writeBytes((String) value);
-     	} else if (type == Column.VARCHAR){
+     	} else {
      		tuple.writeBytes((String) value);
      	}
     }

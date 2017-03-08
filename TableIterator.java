@@ -149,7 +149,6 @@ public class TableIterator extends RelationIterator {
      *         while accessing the underlying database(s)
      */
     public boolean next() throws DeadlockException, DatabaseException {
-         boolean hasNext = false;
          OperationStatus status = this.cursor.getNext(this.key, this.data, null);
          
           if (status == OperationStatus.KEYEMPTY){
@@ -157,10 +156,10 @@ public class TableIterator extends RelationIterator {
          			"record was deleted.");
          } else if (status == OperationStatus.SUCCESS){
            	this.numTuples++;
-           	hasNext = true;
+           	return true;
          }
         
-         return hasNext;
+         return false;
     }
     
     /**
@@ -191,8 +190,43 @@ public class TableIterator extends RelationIterator {
      * @throws  IndexOutOfBoundsException if the specified index is invalid
      */
     public Object getColumnVal(int colIndex) {
-        /* not yet implemented */
-        return "Jon";
+        TupleInput dataIn = new TupleInput(data.getData());
+        // Lookup byte ref location from header metadata
+        dataIn.mark(0);
+        dataIn.skip((Integer.SIZE/8) * colIndex);
+        
+        // Get byteLocation
+        int startByteLocation = (int)dataIn.readInt();
+        int endByteLocation = (int)dataIn.readInt();
+        if(startByteLocation == -1){
+            return null;
+        }
+        
+        if (colIndex == table.numColumns() - 1){
+        	endByteLocation = data.getSize();
+        } else {
+        	dataIn.skip(startByteLocation);
+        }
+        
+        System.out.println(startByteLocation);
+        System.out.println(endByteLocation);
+
+        dataIn.reset();
+        dataIn.skip(startByteLocation);
+        
+        int type = table.getColumn(colIndex).getType();
+        Object value = null;
+        if(table.getColumn(colIndex).getType() == Column.INTEGER){
+            value = dataIn.readInt();
+        } else if(table.getColumn(colIndex).getType() == Column.REAL){
+            value = dataIn.readDouble();
+        } else{
+        	int numBytesToRead = endByteLocation - startByteLocation;
+        	value = dataIn.readBytes(numBytesToRead);
+        	System.out.println(">>>"+value+"<<<");
+        }
+        
+        return value;
     }
     
     /**
