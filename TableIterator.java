@@ -195,35 +195,44 @@ public class TableIterator extends RelationIterator {
         dataIn.mark(0);
         dataIn.skip((Integer.SIZE/8) * colIndex);
         
-        // Get byteLocation
+        // Get standard byteLocations
         int startByteLocation = (int)dataIn.readInt();
         int endByteLocation = (int)dataIn.readInt();
         if(startByteLocation == -1){
             return null;
         }
         
+        // Column is last in table. EOL is last byte in value
         if (colIndex == table.numColumns() - 1){
         	endByteLocation = data.getSize();
-        } else {
-        	dataIn.skip(startByteLocation);
+        } 
+        // Column to the right is null. Walk right until non-null field found.
+        else if (endByteLocation == -1){
+        	int steps = colIndex;
+	        while (endByteLocation == -1){
+	        	if (steps == numTuples){
+	        		endByteLocation = data.getSize();
+	        		break;
+	        	}
+
+	        	endByteLocation = (int)dataIn.readInt();
+	        	steps++;
+	        }
         }
-        
-        System.out.println(startByteLocation);
-        System.out.println(endByteLocation);
 
         dataIn.reset();
         dataIn.skip(startByteLocation);
         
         int type = table.getColumn(colIndex).getType();
         Object value = null;
-        if(table.getColumn(colIndex).getType() == Column.INTEGER){
+        if(type == Column.INTEGER){
             value = dataIn.readInt();
-        } else if(table.getColumn(colIndex).getType() == Column.REAL){
+        } else if(type == Column.REAL){
             value = dataIn.readDouble();
         } else{
         	int numBytesToRead = endByteLocation - startByteLocation;
         	value = dataIn.readBytes(numBytesToRead);
-        	System.out.println(">>>"+value+"<<<");
+//        	System.out.println(">>>"+value+"<<<");
         }
         
         return value;
