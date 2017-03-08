@@ -208,15 +208,17 @@ public class TableIterator extends RelationIterator {
         } 
         // Column to the right is null. Walk right until non-null field found.
         else if (endByteLocation == -1){
-        	int steps = colIndex;
+        	
+        	int tmpEndByteLocation = colIndex + 1;
 	        while (endByteLocation == -1){
-	        	if (steps == numTuples){
-	        		endByteLocation = data.getSize();
+	        	if (tmpEndByteLocation == numColumns() - 1){
+	        		int headerSteps = (numColumns() - tmpEndByteLocation -1);
+	        		endByteLocation = data.getSize() - headerSteps;
 	        		break;
+	        	} else {
+	        		endByteLocation = (int)dataIn.readInt();	
 	        	}
-
-	        	endByteLocation = (int)dataIn.readInt();
-	        	steps++;
+	        	tmpEndByteLocation++;
 	        }
         }
 
@@ -232,7 +234,6 @@ public class TableIterator extends RelationIterator {
         } else{
         	int numBytesToRead = endByteLocation - startByteLocation;
         	value = dataIn.readBytes(numBytesToRead);
-//        	System.out.println(">>>"+value+"<<<");
         }
         
         return value;

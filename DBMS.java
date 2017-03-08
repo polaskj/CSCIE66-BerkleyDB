@@ -54,10 +54,14 @@ public class DBMS {
                 
                 //TODO REMOVE LATER
 //                String commandString = "DROP TABLE PKCourse1;";
-//                String commandString = "CREATE TABLE PKCourse1(id CHAR(10) PRIMARY KEY, fname VARCHAR(10), lname VARCHAR(10) , city VARCHAR(10), area INT);";
-//                String commandString = "INSERT INTO PKCourse1 VALUES ('1',null,null,null,123);";
-              String commandString = "SELECT * FROM PKCourse1;";
+//                String commandString = "CREATE TABLE PKCourse1(id CHAR(10), fname VARCHAR(10) PRIMARY KEY, lname VARCHAR(10) , city VARCHAR(10), area INT);";
+//                String commandString = "INSERT INTO PKCourse1 VALUES (null,'1',null,null,123);";
+//              String commandString = "INSERT INTO PKCourse1 VALUES (null,'j',null,null,null);";
+//              String commandString = "INSERT INTO PKCourse1 VALUES ('YOLO',null,'asdf',null,null);";
+//              String commandString = "INSERT INTO PKCourse1 VALUES ('i','a','b','c',123);";
 
+              String commandString = "SELECT * FROM PKCourse1 WHERE fname = 'j';";
+//
               
                 //tests
 //              String commandString = "INSERT INTO PKCourse1 VALUES ('P',null,null,null,null);";
