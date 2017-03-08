@@ -57,7 +57,7 @@ public class DBMS {
                  * DROP TABLE PKCourse1;
                  */
                 //TODO REMOVE LATER
-                String commandString = "INSERT INTO PKCourse1 VALUES ('z','b','c','d',99);";
+                String commandString = "SELECT * FROM PKCourse1;";
                 
                 if (commandString.equalsIgnoreCase("q"))
                     break;

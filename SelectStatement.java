@@ -59,6 +59,30 @@ public class SelectStatement extends SQLStatement {
     }
     
     public void execute() throws DatabaseException, DeadlockException {
-        /* not yet implemented */
+    	if(this.numTables() > 1){
+            throw new DatabaseException("Unsupported SELECT command: More than one table in the FROM clause");
+        }
+    	TableIterator iter = null;
+        try {
+            Table table = this.getTable(0);
+            // Open table and assign status resp
+            OperationStatus status = table.open();
+            if (status == OperationStatus.KEYEXIST){
+            	throw new DatabaseException(" The operation to insert data was configured to not " +
+            			"allow overwrite and the key already exists in the database.");
+            } else if (status == OperationStatus.KEYEMPTY){
+            	throw new DatabaseException("The cursor operation was unsuccessful because the current " +
+            			"record was deleted.");
+            } else if (status == OperationStatus.NOTFOUND){
+            	throw new DatabaseException("The requested key/data pair was not found.");
+            } else if (status == OperationStatus.SUCCESS && DBMS.DEBUG){
+              	System.out.println("The insert operation was successful.");
+            }
+            boolean hasWhere = this.numWhereColumns() > 0;
+            iter = new TableIterator(this, table, hasWhere);
+            iter.printAll(System.out);
+        } finally {
+        	iter.close();
+        }
     }
 }
