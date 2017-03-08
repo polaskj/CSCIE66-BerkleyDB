@@ -149,17 +149,13 @@ public class TableIterator extends RelationIterator {
      *         while accessing the underlying database(s)
      */
     public boolean next() throws DeadlockException, DatabaseException {
-         OperationStatus status = this.cursor.getNext(this.key, this.data, null);
-         
-          if (status == OperationStatus.KEYEMPTY){
-         	throw new DatabaseException("The cursor operation was unsuccessful because the current " +
-         			"record was deleted.");
-         } else if (status == OperationStatus.SUCCESS){
-           	this.numTuples++;
-           	return true;
-         }
-        
-         return false;
+    	while(this.cursor.getNext(this.key, this.data, null) == OperationStatus.SUCCESS){
+            if(this.where.isTrue()){
+                this.numTuples++;
+                return true;
+            }
+        }
+        return false;
     }
     
     /**

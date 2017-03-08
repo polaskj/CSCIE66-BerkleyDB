@@ -60,7 +60,7 @@ public class DBMS {
 //              String commandString = "INSERT INTO PKCourse1 VALUES ('YOLO',null,'asdf',null,null);";
 //              String commandString = "INSERT INTO PKCourse1 VALUES ('i','a','b','c',123);";
 
-              String commandString = "SELECT * FROM PKCourse1 WHERE fname = 'j';";
+              String commandString = "SELECT * FROM PKCourse1 WHERE id IS null;";
 //
               
                 //tests
