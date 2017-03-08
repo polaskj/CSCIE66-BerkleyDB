@@ -70,11 +70,6 @@ public class InsertStatement extends SQLStatement {
             if (status == OperationStatus.KEYEXIST){
             	throw new DatabaseException(" The operation to insert data was configured to not " +
             			"allow overwrite and the key already exists in the database.");
-            } else if (status == OperationStatus.KEYEMPTY){
-            	throw new DatabaseException("The cursor operation was unsuccessful because the current " +
-            			"record was deleted.");
-            } else if (status == OperationStatus.NOTFOUND){
-            	throw new DatabaseException("The requested key/data pair was not found.");
             } else if (status == OperationStatus.SUCCESS && DBMS.DEBUG){
               	System.out.println("The insert operation was successful.");
             }

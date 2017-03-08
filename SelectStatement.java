@@ -67,10 +67,7 @@ public class SelectStatement extends SQLStatement {
             Table table = this.getTable(0);
             // Open table and assign status resp
             OperationStatus status = table.open();
-            if (status == OperationStatus.KEYEXIST){
-            	throw new DatabaseException(" The operation to insert data was configured to not " +
-            			"allow overwrite and the key already exists in the database.");
-            } else if (status == OperationStatus.KEYEMPTY){
+            if (status == OperationStatus.KEYEMPTY){
             	throw new DatabaseException("The cursor operation was unsuccessful because the current " +
             			"record was deleted.");
             } else if (status == OperationStatus.NOTFOUND){
